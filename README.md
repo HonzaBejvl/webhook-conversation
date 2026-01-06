@@ -71,6 +71,7 @@ After the integration is added, you'll see the "Webhook Conversation" integratio
    - **Timeout**: The timeout in seconds for waiting for a response (default: 30 seconds, range: 1-300 seconds)
    - **Enable Response Streaming**: Enable real-time streaming of responses as they are generated (default: disabled)
    - **System Prompt**: A custom system prompt to provide additional context or instructions to your AI model
+  - **Custom Request Fields (JSON)**: Optional JSON object merged into each request. String values support Home Assistant templates.
 
 2. **Add AI Task**: Click the **"Add Entry"** button on the integration page and select **"AI Task"** to create a webhook-based AI task handler. Configure it with:
    - **Webhook URL**: The URL of your webhook endpoint (remember to activate the workflow in n8n and to use the production webhook URL)
@@ -78,6 +79,7 @@ After the integration is added, you'll see the "Webhook Conversation" integratio
    - **Timeout**: The timeout in seconds for waiting for a response (default: 30 seconds, range: 1-300 seconds)
    - **Enable Response Streaming**: Enable real-time streaming of responses as they are generated (default: disabled)
    - **System Prompt**: A custom system prompt to provide additional context or instructions to your AI model
+  - **Custom Request Fields (JSON)**: Optional JSON object merged into each request. String values support Home Assistant templates.
 
 3. **Add TTS (Text-to-Speech)**: Click the **"Add Entry"** button on the integration page and select **"TTS"** to create a webhook-based text-to-speech service. Configure it with:
    - **Webhook URL**: The URL of your webhook endpoint that will handle TTS requests
@@ -85,6 +87,7 @@ After the integration is added, you'll see the "Webhook Conversation" integratio
    - **Supported Languages**: List of supported language codes (e.g., "en-US", "de-DE", "fr-FR")
    - **Voices**: Optional list of available voice names for speech synthesis
    - **Authentication**: Optional HTTP basic authentication for securing your webhook endpoint
+  - **Custom Request Fields (JSON)**: Optional JSON object merged into each request. String values support Home Assistant templates.
 
 4. **Add STT (Speech-to-Text)**: Click the **"Add Entry"** button on the integration page and select **"STT"** to create a webhook-based speech-to-text service. Configure it with:
    - **Webhook URL**: The URL of your webhook endpoint that will handle STT requests
@@ -92,6 +95,7 @@ After the integration is added, you'll see the "Webhook Conversation" integratio
    - **Supported Languages**: List of supported language codes (e.g., "en-US", "de-DE", "fr-FR")
    - **Output Field**: The field name in the webhook response containing the transcribed text (default: "output")
    - **Authentication**: Optional HTTP basic authentication for securing your webhook endpoint
+  - **Custom Request Fields (JSON)**: Optional JSON object merged into each request. String values support Home Assistant templates.
 
 > [!NOTE]
 > You can add multiple conversation agents, AI task handlers, TTS services, and STT services by repeating steps 2-4. Each can be configured with different webhook URLs and settings to support various use cases.
@@ -217,6 +221,26 @@ This example workflow includes:
 > For **TTS**: The `voice` field is only included when a specific voice is requested and the TTS service has been configured with available voices. The webhook should return audio data with an appropriate Content-Type header (e.g., "audio/wav" or "audio/mp3").
 >
 > For **STT**: The audio data is automatically converted to the appropriate format and encoded as base64. The webhook should return a JSON response with the transcribed text in the configured output field (default: "output").
+
+## Custom Request Fields (JSON)
+
+Each subentry (Conversation Agent, AI Task, TTS, STT) supports **Custom Request Fields (JSON)**. This is an optional JSON object that is merged into the outgoing request body.
+
+- Values that are strings are rendered as **Home Assistant templates**.
+- Template variables include `payload` (the current request body) plus all existing top-level keys (e.g. `query`, `conversation_id`, `language`, `text`, `audio`, etc.).
+- If a custom field key already exists in the request, it is ignored (the built-in field wins).
+
+Example:
+
+```json
+{
+  "source": "home_assistant",
+  "now": "{{ now().isoformat() }}",
+  "user": "{{ user_id }}",
+  "agent": "{{ agent_id }}",
+  "query_length": "{{ query | length if query is defined else 0 }}"
+}
+```
 
 ## Authentication
 

@@ -16,9 +16,11 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.template import Template, TemplateError
 
 from .const import (
     CONF_AUTH_TYPE,
+    CONF_CUSTOM_REQUEST_FIELDS,
     CONF_ENABLE_STREAMING,
     CONF_OUTPUT_FIELD,
     CONF_PASSWORD,
@@ -79,6 +81,91 @@ class WebhookConversationBaseEntity(Entity):
 
         return headers
 
+    def _get_custom_request_fields(self) -> dict[str, Any] | None:
+        """Return custom request fields config (parsed JSON) if configured."""
+        raw = self._subentry.data.get(CONF_CUSTOM_REQUEST_FIELDS, "")
+
+        if not raw:
+            return None
+
+        if isinstance(raw, dict):
+            return raw
+
+        if not isinstance(raw, str):
+            _LOGGER.warning(
+                "Ignoring %s because it is not a string/object: %s",
+                CONF_CUSTOM_REQUEST_FIELDS,
+                type(raw),
+            )
+            return None
+
+        raw = raw.strip()
+        if not raw:
+            return None
+
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            _LOGGER.warning(
+                "Ignoring %s because it is not valid JSON",
+                CONF_CUSTOM_REQUEST_FIELDS,
+            )
+            return None
+
+        if not isinstance(parsed, dict):
+            _LOGGER.warning(
+                "Ignoring %s because it is not a JSON object",
+                CONF_CUSTOM_REQUEST_FIELDS,
+            )
+            return None
+
+        return parsed
+
+    async def _render_templates(self, value: Any, variables: dict[str, Any]) -> Any:
+        """Recursively render any string values as HA templates."""
+        if isinstance(value, str):
+            template = Template(value, self.hass)
+            try:
+                return template.async_render(variables, parse_result=True)
+            except TemplateError as err:
+                raise HomeAssistantError(
+                    f"Error rendering custom request field template: {err}"
+                ) from err
+
+        if isinstance(value, dict):
+            rendered: dict[str, Any] = {}
+            for key, item in value.items():
+                if isinstance(key, str):
+                    rendered[key] = await self._render_templates(item, variables)
+            return rendered
+
+        if isinstance(value, list):
+            return [await self._render_templates(item, variables) for item in value]
+
+        return value
+
+    async def _apply_custom_request_fields(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Merge in configured custom request fields (rendered templates)."""
+        custom_fields = self._get_custom_request_fields()
+        if not custom_fields:
+            return payload
+
+        variables: dict[str, Any] = {"payload": payload, **payload}
+        rendered = await self._render_templates(custom_fields, variables)
+        if not isinstance(rendered, dict):
+            return payload
+
+        for key, value in rendered.items():
+            if key in payload:
+                _LOGGER.debug(
+                    "Custom request field '%s' ignored because it already exists",
+                    key,
+                )
+                continue
+            payload[key] = value
+
+        return payload
+
 
 class WebhookConversationLLMBaseEntity(WebhookConversationBaseEntity):
     """Base entity for LLM-based webhook conversation entities (conversation and AI task)."""
@@ -93,6 +180,7 @@ class WebhookConversationLLMBaseEntity(WebhookConversationBaseEntity):
 
     async def _send_payload(self, payload: WebhookConversationPayload) -> Any:
         """Send the payload to the webhook."""
+        payload = await self._apply_custom_request_fields(dict(payload))
         _LOGGER.debug(
             "Webhook request: %s",
             payload,
@@ -128,6 +216,7 @@ class WebhookConversationLLMBaseEntity(WebhookConversationBaseEntity):
         self, payload: WebhookConversationPayload
     ) -> AsyncGenerator[str]:
         """Send the payload to the webhook and stream the response."""
+        payload = await self._apply_custom_request_fields(dict(payload))
         _LOGGER.debug("Webhook streaming request: %s", payload)
 
         timeout = self._subentry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)

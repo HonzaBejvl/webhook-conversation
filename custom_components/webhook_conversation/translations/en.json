@@ -14,7 +14,8 @@
             "prompt": "System Prompt",
             "timeout": "Request timeout (seconds)",
             "enable_streaming": "Enable response streaming",
-            "auth_type": "Authentication type"
+            "auth_type": "Authentication type",
+            "custom_request_fields": "Custom request fields (JSON)"
           }
         },
         "auth": {
@@ -29,6 +30,8 @@
       "error": {
         "invalid_webhook_url": "Invalid webhook URL",
         "invalid_auth": "Invalid authentication credentials",
+        "invalid_json": "Custom request fields must be valid JSON.",
+        "invalid_json_object": "Custom request fields must be a JSON object.",
         "unknown": "Unexpected error occurred"
       },
       "abort": {
@@ -50,7 +53,8 @@
             "prompt": "System Prompt",
             "timeout": "Request timeout (seconds)",
             "enable_streaming": "Enable response streaming",
-            "auth_type": "Authentication type"
+            "auth_type": "Authentication type",
+            "custom_request_fields": "Custom request fields (JSON)"
           }
         },
         "auth": {
@@ -65,6 +69,8 @@
       "error": {
         "invalid_webhook_url": "Invalid webhook URL",
         "invalid_auth": "Invalid authentication credentials",
+        "invalid_json": "Custom request fields must be valid JSON.",
+        "invalid_json_object": "Custom request fields must be a JSON object.",
         "unknown": "Unexpected error occurred"
       },
       "abort": {
@@ -84,11 +90,13 @@
             "webhook_url": "Webhook URL",
             "timeout": "Request timeout (seconds)",
             "auth_type": "Authentication type",
+            "custom_request_fields": "Custom request fields (JSON)",
             "supported_languages": "Supported languages",
             "voices": "Voices"
           },
           "data_description": {
             "supported_languages": "Enter language codes (e.g., en-US, de-DE, fr-FR).",
+            "custom_request_fields": "Optional JSON object merged into each request. String values support Home Assistant templates.",
             "voices": "Enter voice names."
           }
         },
@@ -104,6 +112,8 @@
       "error": {
         "invalid_webhook_url": "Invalid webhook URL",
         "invalid_auth": "Invalid authentication credentials",
+        "invalid_json": "Custom request fields must be valid JSON.",
+        "invalid_json_object": "Custom request fields must be a JSON object.",
         "invalid_language_code": "One or more language codes are invalid. Please use valid language codes like en-US, de-DE, fr-FR.",
         "no_languages_specified": "At least one language must be specified.",
         "unknown": "Unexpected error occurred"
@@ -126,10 +136,12 @@
             "output_field": "Output field name",
             "timeout": "Request timeout (seconds)",
             "auth_type": "Authentication type",
+            "custom_request_fields": "Custom request fields (JSON)",
             "supported_languages": "Supported languages"
           },
           "data_description": {
             "supported_languages": "Enter language codes (e.g., en-US, de-DE, fr-FR).",
+            "custom_request_fields": "Optional JSON object merged into each request. String values support Home Assistant templates.",
             "output_field": "The field name in the webhook response containing the transcribed text."
           }
         },
@@ -145,6 +157,8 @@
       "error": {
         "invalid_webhook_url": "Invalid webhook URL",
         "invalid_auth": "Invalid authentication credentials",
+        "invalid_json": "Custom request fields must be valid JSON.",
+        "invalid_json_object": "Custom request fields must be a JSON object.",
         "invalid_language_code": "One or more language codes are invalid. Please use valid language codes like en-US, de-DE, fr-FR.",
         "no_languages_specified": "At least one language must be specified.",
         "unknown": "Unexpected error occurred"

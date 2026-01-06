@@ -7,6 +7,7 @@ from collections.abc import AsyncIterable
 import io
 import logging
 from pathlib import Path
+from typing import cast
 import wave
 
 import aiohttp
@@ -155,6 +156,8 @@ class WebhookConversationSTTEntity(
             "audio": audio_object,
             "language": metadata.language,
         }
+
+        payload = cast(WebhookSTTRequestPayload, await self._apply_custom_request_fields(dict(payload)))
 
         timeout = self._subentry.data.get(CONF_TIMEOUT, DEFAULT_TIMEOUT)
         session = async_get_clientsession(self.hass)

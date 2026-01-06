@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import json
 from typing import Any, cast
 
 import voluptuous as vol
@@ -26,6 +27,7 @@ from homeassistant.util import language as language_util
 
 from .const import (
     CONF_AUTH_TYPE,
+    CONF_CUSTOM_REQUEST_FIELDS,
     CONF_ENABLE_STREAMING,
     CONF_NAME,
     CONF_OUTPUT_FIELD,
@@ -110,6 +112,13 @@ def _get_subentry_schema(
                     translation_key="auth_type",
                 )
             ),
+            vol.Optional(
+                CONF_CUSTOM_REQUEST_FIELDS,
+                description={
+                    "suggested_value": options.get(CONF_CUSTOM_REQUEST_FIELDS, "")
+                },
+                default=options.get(CONF_CUSTOM_REQUEST_FIELDS, ""),
+            ): TextSelector(TextSelectorConfig(multiline=True)),
         }
     )
 
@@ -295,6 +304,19 @@ class WebhookSubentryFlowHandler(ConfigSubentryFlow):
         ):
             _LOGGER.error("Invalid webhook URL: %s", webhook_url)
             errors["base"] = "invalid_webhook_url"
+
+        if custom_fields_raw := cast(str, user_input.get(CONF_CUSTOM_REQUEST_FIELDS, "")):
+            custom_fields_raw = custom_fields_raw.strip()
+            if custom_fields_raw:
+                try:
+                    parsed = json.loads(custom_fields_raw)
+                except json.JSONDecodeError:
+                    errors[CONF_CUSTOM_REQUEST_FIELDS] = "invalid_json"
+                else:
+                    if not isinstance(parsed, dict):
+                        errors[CONF_CUSTOM_REQUEST_FIELDS] = "invalid_json_object"
+            else:
+                user_input[CONF_CUSTOM_REQUEST_FIELDS] = ""
 
         if self._subentry_type in ("tts", "stt"):
             if not (supported_languages := user_input.get(CONF_SUPPORTED_LANGUAGES)):

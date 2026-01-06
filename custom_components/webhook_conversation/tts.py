@@ -102,6 +102,8 @@ class WebhookConversationTextToSpeechEntity(
         if voice := cast(str, options.get(ATTR_VOICE)):
             payload["voice"] = voice
 
+        payload = cast(WebhookTTSRequestPayload, await self._apply_custom_request_fields(dict(payload)))
+
         async with session.post(
             self._webhook_url,
             json=payload,
